@@ -2,31 +2,45 @@ import { component$, Resource, useResource$ } from '@builder.io/qwik';
 import { useLocation } from '@builder.io/qwik-city';
 import { getBuilderSearchParams, getContent, RenderContent } from '@builder.io/sdk-qwik';
 
-export default component$<{ html?: any; apiKey: string; model: string; tag: 'main' | 'div' }>(
-  (props) => {
-    const location = useLocation();
-    const query = location.query;
-    const render =
-      typeof query.get === 'function' ? query.get('render') : (query as { render?: string }).render;
-    const isSDK = render === 'sdk';
-    const builderContentRsrc = useResource$<any>(() => {
-      if (isSDK) {
-        return getContent({
-          model: props.model!,
-          apiKey: props.apiKey!,
-          options: getBuilderSearchParams(location.query),
-          userAttributes: {
-            urlPath: location.pathname,
-          },
-        });
-      } else if (props.html) {
-        return { html: props.html };
-      } else {
-        return getBuilderContent(props.apiKey, props.model, location.pathname);
-      }
-    });
+export const FIXED = {
+  position: 'fixed',
+  top: '0px',
+  right: '0px',
+  left: '0px',
+};
 
-    return (
+export default component$<{
+  html?: any;
+  apiKey: string;
+  model: string;
+  tag: 'main' | 'div';
+  fixed?: boolean;
+}>((props) => {
+  const location = useLocation();
+  const query = location.query;
+  const render =
+    typeof query.get === 'function' ? query.get('render') : (query as { render?: string }).render;
+  const isSDK = render === 'sdk';
+  const builderContentRsrc = useResource$<any>(() => {
+    if (isSDK) {
+      return getContent({
+        model: props.model!,
+        apiKey: props.apiKey!,
+        options: getBuilderSearchParams(location.query),
+        userAttributes: {
+          urlPath: location.pathname,
+        },
+      });
+    } else if (props.html) {
+      return { html: props.html };
+    } else {
+      return getBuilderContent(props.apiKey, props.model, location.pathname);
+    }
+  });
+
+  return (
+    <div style={props.fixed ? FIXED : undefined}>
+      {props.fixed ? <style>{`:root{--builder-bar-height: 50px;}`}</style> : undefined}
       <Resource
         value={builderContentRsrc}
         onPending={() => <div>Loading...</div>}
@@ -38,9 +52,9 @@ export default component$<{ html?: any; apiKey: string; model: string; tag: 'mai
           )
         }
       />
-    );
-  }
-);
+    </div>
+  );
+});
 
 export interface BuilderContent {
   html: string;
